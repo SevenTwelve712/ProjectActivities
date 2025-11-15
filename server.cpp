@@ -82,7 +82,7 @@ pair<bool, vector<float>> read_nums_from_socket(int socket){
 			c = i == bytes_read ? ' ' : chars_arr[i];
 			if (valid.find(c) != string::npos){current_num += c;} // если символ может находится в вещественном числе
 			else if (!current_num.empty()){ // в ином случае если текущее значение числа не пустое пытаемся преобразовать его в float, затем обнуляем текуще значение
-				try{nums.push_back(stof(current_num)); cout << "Считано число " << current_num;}
+				try{nums.push_back(stof(current_num)); cout << "Считано число " << current_num << endl;}
 				catch (const exception& e){cerr << "Невалидное число: " << current_num << endl;}
 				current_num.clear();
 			}
@@ -134,7 +134,7 @@ int main(){
 		int client_socket = accept_next_connection(listening_socket);
 		if (client_socket < 0){return 1;}
 		auto read_from_socket_res = read_nums_from_socket(client_socket);
-		if (!read_from_socket_res.first){return 1;}
+		if (!read_from_socket_res.first) close(client_socket);
 		send_floats_vector(client_socket, read_from_socket_res.second);
 		close(client_socket);
 		cout << "Сокет закрыт" << endl;

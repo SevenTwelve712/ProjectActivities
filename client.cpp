@@ -17,43 +17,43 @@ int main(void)
 {
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
-	// Ключевые константы 
-	const char SERVER_IP[] = "10.35.153.128";		// IPv4 адрес сервера
-	const short SERVER_PORT_NUM = 7129;				// Порт сервера
-	const short BUFF_SIZE = 4096;					// Максимальный размер буфера для обмена данных
+	// РљР»СЋС‡РµРІС‹Рµ РєРѕРЅСЃС‚Р°РЅС‚С‹
+	const char SERVER_IP[] = "10.35.153.128";		// IPv4 Р°РґСЂРµСЃ СЃРµСЂРІРµСЂР°
+	const short SERVER_PORT_NUM = 7129;				// РџРѕСЂС‚ СЃРµСЂРІРµСЂР°
+	const short BUFF_SIZE = 4096;					// РњР°РєСЃРёРјР°Р»СЊРЅС‹Р№ СЂР°Р·РјРµСЂ Р±СѓС„РµСЂР° РґР»СЏ РѕР±РјРµРЅР° РґР°РЅРЅС‹С…
  
-	// Ключевая переменная erStat
-	int erStat;										// Проверка на ошибки и возвращение их номера
+	// РљР»СЋС‡РµРІР°СЏ РїРµСЂРµРјРµРЅРЅР°СЏ erStat
+	int erStat;										// РџСЂРѕРІРµСЂРєР° РЅР° РѕС€РёР±РєРё Рё РІРѕР·РІСЂР°С‰РµРЅРёРµ РёС… РЅРѕРјРµСЂР°
 
-	// Преобразование IP адреса сервера
+	// РџСЂРµРѕР±СЂР°Р·РѕРІР°РЅРёРµ IP Р°РґСЂРµСЃР° СЃРµСЂРІРµСЂР°
 	in_addr ip_to_num;		
 	inet_pton(AF_INET, SERVER_IP, &ip_to_num);
 
 
-	// Инициализация WinSock
+	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ WinSock
 	WSADATA wsData;
 	erStat = WSAStartup(MAKEWORD(2,2), &wsData);
 
 	if (erStat != 0) {
-		cout << "Ошибка инициализации версии WinSock #";
+		cout << "РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё РІРµСЂСЃРёРё WinSock #";
 		cout << WSAGetLastError();
 		return 1;
 	}
 	else 
-		cout << "Инициализация WinSock прошла успешно!" << endl;
+		cout << "РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ WinSock РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!" << endl;
 	
-	// Инициализация сокета
+	// РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃРѕРєРµС‚Р°
 	SOCKET ClientSock = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (ClientSock == INVALID_SOCKET) {
-		cout << "Ошибка инициализации сокета #" << WSAGetLastError() << endl;
+		cout << "РћС€РёР±РєР° РёРЅРёС†РёР°Р»РёР·Р°С†РёРё СЃРѕРєРµС‚Р° #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
 	}
 	else 
-		cout << "Инициализация сокета клиента прошла успешно!" << endl;
+		cout << "РРЅРёС†РёР°Р»РёР·Р°С†РёСЏ СЃРѕРєРµС‚Р° РєР»РёРµРЅС‚Р° РїСЂРѕС€Р»Р° СѓСЃРїРµС€РЅРѕ!" << endl;
 
-	// Задание структуры servInfo, в которой будут храниться тип IP адреса, сам адрес и порт сервера
+	// Р—Р°РґР°РЅРёРµ СЃС‚СЂСѓРєС‚СѓСЂС‹ servInfo, РІ РєРѕС‚РѕСЂРѕР№ Р±СѓРґСѓС‚ С…СЂР°РЅРёС‚СЊСЃСЏ С‚РёРї IP Р°РґСЂРµСЃР°, СЃР°Рј Р°РґСЂРµСЃ Рё РїРѕСЂС‚ СЃРµСЂРІРµСЂР°
 	sockaddr_in servInfo;
 
 	ZeroMemory(&servInfo, sizeof(servInfo));
@@ -62,51 +62,51 @@ int main(void)
 	servInfo.sin_addr = ip_to_num;	
 	servInfo.sin_port = htons(SERVER_PORT_NUM);
 
-	//Подключение к серверу
+	//РџРѕРґРєР»СЋС‡РµРЅРёРµ Рє СЃРµСЂРІРµСЂСѓ
 
 	erStat = connect(ClientSock, (sockaddr*)&servInfo, sizeof(servInfo));
 	
 	if (erStat != 0) {
-		cout << "Попытка подключения к серверу не удалась. Ошибка #" << WSAGetLastError() << endl;
+		cout << "РџРѕРїС‹С‚РєР° РїРѕРґРєР»СЋС‡РµРЅРёСЏ Рє СЃРµСЂРІРµСЂСѓ РЅРµ СѓРґР°Р»Р°СЃСЊ. РћС€РёР±РєР° #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
 		return 1;
 	}
 	else { 
-		cout << "Соединение с сервером установлено успешно!" << endl;
+		cout << "РЎРѕРµРґРёРЅРµРЅРёРµ СЃ СЃРµСЂРІРµСЂРѕРј СѓСЃС‚Р°РЅРѕРІР»РµРЅРѕ СѓСЃРїРµС€РЅРѕ!" << endl;
 	}
 	
 	vector <char> clientBuff(BUFF_SIZE);	
-	vector <char> servBuff(BUFF_SIZE);		// Буферы для отправки и получения данных
-	short packet_size = 0;										// Размер отправленных/полученных данных в байтах
+	vector <char> servBuff(BUFF_SIZE);		// Р‘СѓС„РµСЂС‹ РґР»СЏ РѕС‚РїСЂР°РІРєРё Рё РїРѕР»СѓС‡РµРЅРёСЏ РґР°РЅРЅС‹С…
+	short packet_size = 0;										// Р Р°Р·РјРµСЂ РѕС‚РїСЂР°РІР»РµРЅРЅС‹С…/РїРѕР»СѓС‡РµРЅРЅС‹С… РґР°РЅРЅС‹С… РІ Р±Р°Р№С‚Р°С…
 	ifstream file("numbers.txt");
     string bufferstring;
     if (!file.is_open()) {
-        cout << "Ошибка открытия файла!" << endl;
+        cout << "РћС€РёР±РєР° РѕС‚РєСЂС‹С‚РёСЏ С„Р°Р№Р»Р°!" << endl;
 		closesocket(ClientSock);
 		WSACleanup();
         return 1;
     }
 
     while (getline(file, bufferstring)) {
-        // Проходим по текущей строке
+        // РџСЂРѕС…РѕРґРёРј РїРѕ С‚РµРєСѓС‰РµР№ СЃС‚СЂРѕРєРµ
         for (char currentchar : bufferstring) {
-            // Добавляем символ в общий вектор
+            // Р”РѕР±Р°РІР»СЏРµРј СЃРёРјРІРѕР» РІ РѕР±С‰РёР№ РІРµРєС‚РѕСЂ
             clientBuff.push_back(currentchar);
         }
     }
 
-    cout << "\nASCII коды всех символов:\n";
-    // Вывод содержимого в формате ASCII
+    cout << "\nASCII РєРѕРґС‹ РІСЃРµС… СЃРёРјРІРѕР»РѕРІ:\n";
+    // Р’С‹РІРѕРґ СЃРѕРґРµСЂР¶РёРјРѕРіРѕ РІ С„РѕСЂРјР°С‚Рµ ASCII
     for (char c : clientBuff) {
         cout << static_cast<int>(c) << " ";
     }
     cout << "\n";
-	send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //Отправка данных на сервер
-	shutdown(ClientSock, 1); //Закрытие сокета для записи со стороны клиента
-	packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //Получение данных с сервера
+	send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //РћС‚РїСЂР°РІРєР° РґР°РЅРЅС‹С… РЅР° СЃРµСЂРІРµСЂ
+	shutdown(ClientSock, 1); //Р—Р°РєСЂС‹С‚РёРµ СЃРѕРєРµС‚Р° РґР»СЏ Р·Р°РїРёСЃРё СЃРѕ СЃС‚РѕСЂРѕРЅС‹ РєР»РёРµРЅС‚Р°
+	packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //РџРѕР»СѓС‡РµРЅРёРµ РґР°РЅРЅС‹С… СЃ СЃРµСЂРІРµСЂР°
 	if (packet_size == SOCKET_ERROR) { 
-			cout << "Не удалось получить данные с сервера. Ошибка # " << WSAGetLastError() << endl;
+			cout << "РќРµ СѓРґР°Р»РѕСЃСЊ РїРѕР»СѓС‡РёС‚СЊ РґР°РЅРЅС‹Рµ СЃ СЃРµСЂРІРµСЂР°. РћС€РёР±РєР° # " << WSAGetLastError() << endl;
 			closesocket(ClientSock);
 			WSACleanup();
 			system("pause");
@@ -118,4 +118,5 @@ int main(void)
 	WSACleanup();
 	system("pause");
 	return 0;
+
 }

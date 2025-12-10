@@ -9,6 +9,8 @@
 #include <windows.h>
 #include <random>
 #include <iomanip>
+#include <thread> // Для паузы (sleep)
+#include <chrono> // Для задания времени паузы
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -42,7 +44,7 @@ int main(void)
 	erStat = WSAStartup(MAKEWORD(2,2), &wsData);
 
 	if (erStat != 0) {
-		cout << "Ошибка инициализации версии WinSock #";
+		cerr << "Ошибка инициализации версии WinSock #";
 		cout << WSAGetLastError();
 		return 1;
 	}
@@ -53,7 +55,7 @@ int main(void)
 	SOCKET ClientSock = socket(AF_INET, SOCK_STREAM, 0);
 
 	if (ClientSock == INVALID_SOCKET) {
-		cout << "Ошибка инициализации сокета #" << WSAGetLastError() << endl;
+		cerr << "Ошибка инициализации сокета #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
 	}
@@ -74,7 +76,7 @@ int main(void)
 	erStat = connect(ClientSock, (sockaddr*)&servInfo, sizeof(servInfo));
 	
 	if (erStat != 0) {
-		cout << "Попытка подключения к серверу не удалась. Ошибка #" << WSAGetLastError() << endl;
+		cerr << "Попытка подключения к серверу не удалась. Ошибка #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
 		return 1;
@@ -83,18 +85,16 @@ int main(void)
 		cout << "Соединение с сервером установлено успешно!" << endl;
 	}
 	
-	vector <char> clientBuff;	
-	vector <char> servBuff;		// Буферы для отправки и получения данных
-	short packet_size = 0;										// Размер отправленных/полученных данных в байтах
+	
 	int userdata = 0;						//Введенные пользователем желаемые данные
 	while (userdata != 2)		//Спрашиваем у пользователя, что он хочет сделать в файле
 	{
-		cout << "Выберите вариант, что вы хотите сделать?\n1. Сгенерировать n случайных чисел в диапазоне [a;b) (n, a, b вводятся вручную) и записать их в файл numbers.txt;\n2. Считать данные из файла в сокет." << endl;
+		cout << "Выберите вариант, что вы хотите сделать?\n1. Очистить файл numbers.txt, сгенерировать n случайных чисел в диапазоне [a;b) (n, a, b вводятся вручную) и записать их в файл numbers.txt;\n2. Считать данные из файла в сокет." << endl;
 		cin >> userdata;
 		cout << "\n";
 		if (userdata != 1|userdata!=2)
 		{
-			cout << "Ошибка! Введены некорректные данные!" << endl;
+			cerr << "Ошибка! Введены некорректные данные!" << endl;
 		} else if (userdata == 1)
 		{
 			cout << "Сколько чисел вы хотите сгенерировать?" << endl;
@@ -102,7 +102,7 @@ int main(void)
 			cin >> n;
 			if (n<=0)
 			{
-				cout << "\nВведите корректный n!" << endl;
+				cerr << "\nВведите корректный n!" << endl;
 				continue;
 			}
 			cout << "\nВведите начальное значение интервала: " << endl;
@@ -115,9 +115,9 @@ int main(void)
 			}
 			cout << "Будет сгенерировано " << n << " случайных чисел в диапазоне от " << interval_start << " до " << interval_finish << " и записано в файл. Некоторое количество первых случайных чисел:" << endl;
 			std::uniform_real_distribution<double> dist(interval_start, interval_finish); //Создаём объект распределения для генерации случайных чисел 
-			ofstream file("numbers.txt"); //Открываем файл для записи
+			ofstream file("numbers.txt", std::ios::out | std::ios::trunc); //Открываем файл для записи
 			if (!file.is_open()) {
-        		cout << "Ошибка: Не удалось открыть файл для записи!" << endl;
+        		cerr << "Ошибка: Не удалось открыть файл для записи!" << endl;
 				continue;
     		}	
 			// Настройка формата записи 
@@ -133,16 +133,39 @@ int main(void)
 			cout << "Готово! Числа записаны в файл!" << endl;
 		}	
 	}
-	
+	userdata=0;
+	float usersearch;
+	while (true)
+	{
+		cout << "Выберите алгоритм поиска:\n1. Алгоритм последовательного поиска;\n2. Алгоритм быстрого последовательного поиска; \n3. Алгоритм бинарного поиска; \n4. Алгоритм последовательного поиска в упорядоченном массиве." << endl;
+		cin >> userdata;
+		if (userdata >= 1 && userdata <= 4)
+		{
+			cout << "\nВведите число, которое нужно найти в файле:" << endl;
+			cin >> usersearch;
+			break;
+		} else {
+			cerr << "\nОшибка! Введите корректные данные!" << endl;
+		}
+	}
+	std::ostringstream oss;
+    oss << userdata << " " << usersearch << ""; 
+    std::string searchstring = oss.str();
+	vector <char> clientBuff;	
+	vector <char> servBuff;		// Буферы для отправки и получения данных
+	for (char c : searchstring) {
+            clientBuff.push_back(c);
+    }
+	short packet_size = 0;		// Размер отправленных/полученных данных в байтах
 	ifstream file("numbers.txt"); //Открываем файл для чтения
     if (!file.is_open()) {
-        cout << "Ошибка открытия файла!" << endl;
+        cerr << "Ошибка открытия файла!" << endl;
 		closesocket(ClientSock);
 		WSACleanup();
         return 1;
     }
 	if (isFileEmpty(file)) {
-        std::cout << "Файл пустой!\n";
+        cerr << "Файл пустой!\n";
 		closesocket(ClientSock);
 		WSACleanup();
         return 1;
@@ -165,7 +188,18 @@ int main(void)
 		counter++;
     }
     cout << "\n";
-	send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //Отправка данных на сервер
+	bool isSent = false;
+	while (!isSent) {
+		packet_size = send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //Отправка данных на сервер
+		if (packet_size == -1) {
+            cerr << "Ошибка отправки! Повторная попытка через 2 секунды..." << endl;      
+            // Делаем паузу, чтобы не нагружать процессор бесконечным циклом
+            std::this_thread::sleep_for(std::chrono::seconds(2));
+        } else {
+            cout << "Данные успешно отправлены на сервер! Ожидаем ответа." << endl;
+            isSent = true; // Флаг для выхода из цикла
+        }
+	}
 	shutdown(ClientSock, 1); //Закрытие сокета для записи со стороны клиента
 	packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //Получение данных с сервера
 	if (packet_size == SOCKET_ERROR) { 

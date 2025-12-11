@@ -11,6 +11,7 @@
 #include <iomanip>
 #include <thread> // Для паузы (sleep)
 #include <chrono> // Для задания времени паузы
+#include <sstream>
 
 #pragma comment(lib, "ws2_32.lib")
 
@@ -29,16 +30,17 @@ int main(void)
 	// Ключевые константы 
 	const char SERVER_IP[] = "10.35.153.128";		// IPv4 адрес сервера
 	const short SERVER_PORT_NUM = 7129;				// Порт сервера
-	// const short BUFF_SIZE = 4096;					// Максимальный размер буфера для обмена данных
+	const short BUFF_SIZE = 4096;					// Максимальный размер буфера для обмена данных
  
 	// Ключевая переменная erStat
 	int erStat;										// Проверка на ошибки и возвращение их номера
 
 	// Преобразование IP адреса сервера
 	in_addr ip_to_num;		
-	inet_pton(AF_INET, SERVER_IP, &ip_to_num);
-
-
+	if (inet_pton(AF_INET, SERVER_IP, &ip_to_num) <= 0) {
+        cerr << "Ошибка преобразования IP адреса" << endl;
+        return 1;
+    }
 	// Инициализация WinSock
 	WSADATA wsData;
 	erStat = WSAStartup(MAKEWORD(2,2), &wsData);
@@ -50,7 +52,6 @@ int main(void)
 	}
 	else 
 		cout << "Инициализация WinSock прошла успешно!" << endl;
-	
 	// Инициализация сокета
 	SOCKET ClientSock = socket(AF_INET, SOCK_STREAM, 0);
 
@@ -58,6 +59,7 @@ int main(void)
 		cerr << "Ошибка инициализации сокета #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
+		return 0;
 	}
 	else 
 		cout << "Инициализация сокета клиента прошла успешно!" << endl;
@@ -72,15 +74,15 @@ int main(void)
 	servInfo.sin_port = htons(SERVER_PORT_NUM);
 
 	//Подключение к серверу
-
+	cout << "Подключение к серверу..." << endl;
 	erStat = connect(ClientSock, (sockaddr*)&servInfo, sizeof(servInfo));
 	
 	if (erStat != 0) {
 		cerr << "Попытка подключения к серверу не удалась. Ошибка #" << WSAGetLastError() << endl;
 		closesocket(ClientSock);
 		WSACleanup();
-		return 1;
-	}
+		return 0;
+		}
 	else { 
 		cout << "Соединение с сервером установлено успешно!" << endl;
 	}
@@ -92,7 +94,7 @@ int main(void)
 		cout << "Выберите вариант, что вы хотите сделать?\n1. Очистить файл numbers.txt, сгенерировать n случайных чисел в диапазоне [a;b) (n, a, b вводятся вручную) и записать их в файл numbers.txt;\n2. Считать данные из файла в сокет." << endl;
 		cin >> userdata;
 		cout << "\n";
-		if (userdata != 1|userdata!=2)
+		if (userdata != 1||userdata!=2)
 		{
 			cerr << "Ошибка! Введены некорректные данные!" << endl;
 		} else if (userdata == 1)
@@ -149,10 +151,10 @@ int main(void)
 		}
 	}
 	std::ostringstream oss;
-    oss << userdata << " " << usersearch << ""; 
+    oss << userdata << " " << usersearch << " "; 
     std::string searchstring = oss.str();
 	vector <char> clientBuff;	
-	vector <char> servBuff;		// Буферы для отправки и получения данных
+	vector <char> servBuff(BUFF_SIZE);		// Буферы для отправки и получения данных
 	for (char c : searchstring) {
             clientBuff.push_back(c);
     }
@@ -188,6 +190,7 @@ int main(void)
 		counter++;
     }
     cout << "\n";
+	counter = 0;
 	bool isSent = false;
 	while (!isSent) {
 		packet_size = send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //Отправка данных на сервер
@@ -195,24 +198,50 @@ int main(void)
             cerr << "Ошибка отправки! Повторная попытка через 2 секунды..." << endl;      
             // Делаем паузу, чтобы не нагружать процессор бесконечным циклом
             std::this_thread::sleep_for(std::chrono::seconds(2));
+			counter++;
         } else {
             cout << "Данные успешно отправлены на сервер! Ожидаем ответа." << endl;
             isSent = true; // Флаг для выхода из цикла
         }
-	}
-	shutdown(ClientSock, 1); //Закрытие сокета для записи со стороны клиента
-	packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //Получение данных с сервера
-	if (packet_size == SOCKET_ERROR) { 
-			cout << "Не удалось получить данные с сервера. Ошибка # " << WSAGetLastError() << endl;
+		if (counter == 5) {
+			cerr << "Слишком много неудачных попыток отправки, закрываем клиент!" << endl;
 			closesocket(ClientSock);
 			WSACleanup();
-			system("pause");
 			return 1;
 		}
-		else
-			cout << clientBuff.data() << endl;
+	}
+	shutdown(ClientSock, 1); //Закрытие сокета для записи со стороны клиента
+	while (true)
+	{
+		packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //Получение данных с сервера	
+		if (packet_size >0) {
+			cout << "Сервер отправил " << packet_size << " байт." << endl;
+		} else if (packet_size == 0)
+		{
+			cout << "Сервер закончил отправку." << endl;
+			break;
+		} else {	
+			cerr << "Не удалось получить данные!" << endl;
+			closesocket(ClientSock);
+			WSACleanup();
+			break;
+		}
+	}
+	std::string dataString(servBuff.begin(), servBuff.end());
+	std::stringstream ss(dataString);
+	int firstNumber;
+	if (ss >> firstNumber && firstNumber != 0) {
+        cout << "Искомое число в файле находится под порядковым номером: " << firstNumber << endl;
+    } else if (firstNumber == 0)
+	{
+		cout << "Не удалось найти искомое число!" << endl;	
+	} else {
+        cout << "В полученном векторе не оказалось чисел." << endl;
+    }
 	closesocket(ClientSock);
 	WSACleanup();
+
 	system("pause");
 	return 0;
+
 }

@@ -12,19 +12,20 @@
 #include <thread> // Для паузы (sleep)
 #include <chrono> // Для задания времени паузы
 #include <sstream>
-
+// Подключаем статическую библиотеку WinSock
 #pragma comment(lib, "ws2_32.lib")
 
 using namespace std;
-
+// Функция-помощник: проверяет, пуст ли файл
 bool isFileEmpty(std::ifstream& pFile) {
     return pFile.peek() == std::ifstream::traits_type::eof();
 }
 int main(void)
 {
-	//Настраиваем генератор случайных чисел
+	// Инициализация генератора случайных чисел (Mersenne Twister)
 	std::random_device rd;
     std::mt19937 gen(rd());
+	// Установка кодировки консоли CP1251 для корректного отображения кириллицы
 	SetConsoleCP(1251);
 	SetConsoleOutputCP(1251);
 	// Ключевые константы 
@@ -35,7 +36,7 @@ int main(void)
 	// Ключевая переменная erStat
 	int erStat;										// Проверка на ошибки и возвращение их номера
 
-	// Преобразование IP адреса сервера
+	// Преобразование IP адреса сервера в структуру in_addr
 	in_addr ip_to_num;		
 	if (inet_pton(AF_INET, SERVER_IP, &ip_to_num) <= 0) {
         cerr << "Ошибка преобразования IP адреса" << endl;
@@ -43,6 +44,7 @@ int main(void)
     }
 	// Инициализация WinSock
 	WSADATA wsData;
+	// Запрашиваем версию WinSock 2.2
 	erStat = WSAStartup(MAKEWORD(2,2), &wsData);
 
 	if (erStat != 0) {
@@ -67,11 +69,11 @@ int main(void)
 	// Задание структуры servInfo, в которой будут храниться тип IP адреса, сам адрес и порт сервера
 	sockaddr_in servInfo;
 
-	ZeroMemory(&servInfo, sizeof(servInfo));
+	ZeroMemory(&servInfo, sizeof(servInfo)); 	// Обнуляем память структуры
 
-	servInfo.sin_family = AF_INET;
-	servInfo.sin_addr = ip_to_num;	
-	servInfo.sin_port = htons(SERVER_PORT_NUM);
+	servInfo.sin_family = AF_INET;		// Семейство адресов (IPv4)
+	servInfo.sin_addr = ip_to_num;		// IP адрес (уже в бинарном виде)
+	servInfo.sin_port = htons(SERVER_PORT_NUM);		// Порт (htons переводит порядок байт из хостового в сетевой)
 
 	//Подключение к серверу
 	cout << "Подключение к серверу..." << endl;
@@ -87,18 +89,19 @@ int main(void)
 		cout << "Соединение с сервером установлено успешно!" << endl;
 	}
 	
-	
+	// --- ВЗАИМОДЕЙСТВИЕ С ПОЛЬЗОВАТЕЛЕМ (Генерация данных) ---
 	int userdata = 0;						//Введенные пользователем желаемые данные
-	while (userdata != 2)		//Спрашиваем у пользователя, что он хочет сделать в файле
+	while (userdata != 2)		// Цикл меню: 1 - Генерация чисел в файл, 2 - Пропуск генерации (сразу к отправке)
 	{
 		cout << "Выберите вариант, что вы хотите сделать?\n1. Очистить файл numbers.txt, сгенерировать n случайных чисел в диапазоне [a;b) (n, a, b вводятся вручную) и записать их в файл numbers.txt;\n2. Считать данные из файла в сокет." << endl;
 		cin >> userdata;
 		cout << "\n";
-		if (userdata != 1||userdata!=2)
+		if (userdata != 1&&userdata!=2)
 		{
 			cerr << "Ошибка! Введены некорректные данные!" << endl;
 		} else if (userdata == 1)
 		{
+			// Блок генерации чисел
 			cout << "Сколько чисел вы хотите сгенерировать?" << endl;
 			int n; 
 			cin >> n;
@@ -117,7 +120,7 @@ int main(void)
 			}
 			cout << "Будет сгенерировано " << n << " случайных чисел в диапазоне от " << interval_start << " до " << interval_finish << " и записано в файл. Некоторое количество первых случайных чисел:" << endl;
 			std::uniform_real_distribution<double> dist(interval_start, interval_finish); //Создаём объект распределения для генерации случайных чисел 
-			ofstream file("numbers.txt", std::ios::out | std::ios::trunc); //Открываем файл для записи
+			ofstream file("numbers.txt", std::ios::out | std::ios::trunc); // Открытие файла с флагами: out (запись) и trunc (удалить содержимое перед записью)
 			if (!file.is_open()) {
         		cerr << "Ошибка: Не удалось открыть файл для записи!" << endl;
 				continue;
@@ -135,8 +138,10 @@ int main(void)
 			cout << "Готово! Числа записаны в файл!" << endl;
 		}	
 	}
+	// --- ВЗАИМОДЕЙСТВИЕ С ПОЛЬЗОВАТЕЛЕМ (Выбор поиска) ---
 	userdata=0;
 	float usersearch;
+	// Цикл выбора алгоритма поиска (1-4)
 	while (true)
 	{
 		cout << "Выберите алгоритм поиска:\n1. Алгоритм последовательного поиска;\n2. Алгоритм быстрого последовательного поиска; \n3. Алгоритм бинарного поиска; \n4. Алгоритм последовательного поиска в упорядоченном массиве." << endl;
@@ -150,16 +155,20 @@ int main(void)
 			cerr << "\nОшибка! Введите корректные данные!" << endl;
 		}
 	}
+	// --- ФОРМИРОВАНИЕ ПАКЕТА ДЛЯ ОТПРАВКИ ---
+    // 1. Формируем заголовок запроса: "ID_алгоритма Искомое_Число "
 	std::ostringstream oss;
     oss << userdata << " " << usersearch << " "; 
     std::string searchstring = oss.str();
+	// 2. Копируем заголовок в буфер отправки
 	vector <char> clientBuff;	
-	vector <char> servBuff(BUFF_SIZE);		// Буферы для отправки и получения данных
+	vector <char> servBuff(BUFF_SIZE);		// Буфер для получения данных
 	for (char c : searchstring) {
             clientBuff.push_back(c);
     }
 	short packet_size = 0;		// Размер отправленных/полученных данных в байтах
-	ifstream file("numbers.txt"); //Открываем файл для чтения
+	// 3. Читаем числа из файла и добавляем их в буфер отправки
+	ifstream file("numbers.txt"); 
     if (!file.is_open()) {
         cerr << "Ошибка открытия файла!" << endl;
 		closesocket(ClientSock);
@@ -182,7 +191,7 @@ int main(void)
     }
     cout << "\nASCII коды части отправленных символов:\n";
 	int counter = 0;
-    // Вывод содержимого в формате ASCII
+    // Показываем ASCII коды первых 20 байт, которые уйдут на сервер
     for (char c : clientBuff) {
 		if (counter < 20) {
         cout << static_cast<int>(c) << " ";
@@ -190,19 +199,22 @@ int main(void)
 		counter++;
     }
     cout << "\n";
+	// --- ОТПРАВКА ДАННЫХ ---
 	counter = 0;
 	bool isSent = false;
+	// Пытаемся отправить данные (с повторными попытками при ошибке)
 	while (!isSent) {
 		packet_size = send(ClientSock, clientBuff.data(), clientBuff.size(), 0); //Отправка данных на сервер
 		if (packet_size == -1) {
             cerr << "Ошибка отправки! Повторная попытка через 2 секунды..." << endl;      
-            // Делаем паузу, чтобы не нагружать процессор бесконечным циклом
+            // Пауза перед повторной попыткой
             std::this_thread::sleep_for(std::chrono::seconds(2));
 			counter++;
         } else {
             cout << "Данные успешно отправлены на сервер! Ожидаем ответа." << endl;
             isSent = true; // Флаг для выхода из цикла
         }
+		// Лимит попыток отправки
 		if (counter == 5) {
 			cerr << "Слишком много неудачных попыток отправки, закрываем клиент!" << endl;
 			closesocket(ClientSock);
@@ -211,23 +223,42 @@ int main(void)
 		}
 	}
 	shutdown(ClientSock, 1); //Закрытие сокета для записи со стороны клиента
-	while (true)
-	{
-		packet_size = recv(ClientSock, servBuff.data(), servBuff.size(), 0); //Получение данных с сервера	
-		if (packet_size >0) {
-			cout << "Сервер отправил " << packet_size << " байт." << endl;
-		} else if (packet_size == 0)
-		{
-			cout << "Сервер закончил отправку." << endl;
-			break;
-		} else {	
-			cerr << "Не удалось получить данные!" << endl;
-			closesocket(ClientSock);
-			WSACleanup();
-			break;
-		}
-	}
-	std::string dataString(servBuff.begin(), servBuff.end());
+	// --- ПОЛУЧЕНИЕ ОТВЕТА ---
+	int totalBytesReceived = 0;
+
+    while (true)
+    {
+        // ПРОВЕРКА: Если буфер заполнен (или почти заполнен), увеличиваем его
+        if (totalBytesReceived >= servBuff.size()) {
+            // Увеличиваем размер в 2 раза
+            servBuff.resize(servBuff.size() * 2);
+            cout << "Буфер расширен до " << servBuff.size() << " байт." << endl;
+        }
+
+        // Читаем в свободное место
+        // servBuff.data() + totalBytesReceived — это указатель на "хвост" записанных данных
+        // servBuff.size() - totalBytesReceived — это сколько места осталось
+        int bytesToRead = servBuff.size() - totalBytesReceived;
+        
+        packet_size = recv(ClientSock, servBuff.data() + totalBytesReceived, bytesToRead, 0);
+
+        if (packet_size > 0) {
+            totalBytesReceived += packet_size;
+            cout << "Принято " << packet_size << " байт. Всего: " << totalBytesReceived << endl;
+        } 
+        else if (packet_size == 0) {
+            cout << "Сервер закончил передачу." << endl;
+            break;
+        } 
+        else {
+            cerr << "Ошибка recv" << endl;
+            break;
+        }
+    }
+
+    // После цикла обрезаем вектор до реального размера данных, чтобы убрать лишние нули в конце
+    servBuff.resize(totalBytesReceived);
+    string dataString(servBuff.begin(), servBuff.end());
 	std::stringstream ss(dataString);
 	int firstNumber;
 	if (ss >> firstNumber && firstNumber != 0) {

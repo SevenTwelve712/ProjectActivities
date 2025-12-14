@@ -242,14 +242,14 @@
 // //     // Создаем копию и сортируем ее
 // //     vector<int> sortedArr = arr;
 // //     sort(sortedArr.begin(), sortedArr.end());
-    
+
 // //     int left = 0;
 // //     int right = sortedArr.size() - 1;
 // //     int result = -1;
-    
+
 // //     while (left <= right) {
 // //         int mid = left + (right - left) / 2;
-        
+
 // //         if (sortedArr[mid] == key) {
 // //             result = mid;
 // //             right = mid - 1;
@@ -261,7 +261,7 @@
 // //             left = mid + 1;
 // //         }
 // //     }
-    
+
 // //     return result;
 // // }
 // // 3.2 Алгоритм бинарного поиска всех вхождений (без изменения исходного массива)
@@ -270,16 +270,16 @@
 //     // Создаем копию и сортируем ее
 //     vector<int> sortedArr = arr;
 //     sort(sortedArr.begin(), sortedArr.end());
-    
+
 //     vector<int> indices;
 //     int first = -1;
-    
+
 //     // Поиск первого вхождения
 //     int left = 0;
 //     int right = sortedArr.size() - 1;
 //     while (left <= right) {
 //         int mid = left + (right - left) / 2;
-        
+
 //         if (sortedArr[mid] == key) {
 //             first = mid;
 //             right = mid - 1;
@@ -321,10 +321,10 @@
 // vector<int> sequentialSearchSorted(vector<int>& arr, int key)
 // {
 //     vector<int> indices;
-    
+
 //     // 1. Сортировка массива по возрастанию
 //     sort(arr.begin(), arr.end());
-    
+
 //     // 2. Последовательный поиск с досрочным прекращением
 //     for (int i = 0; i < arr.size(); i++) {
 //         if (arr[i] == key) {
@@ -334,11 +334,13 @@
 //             break;
 //         }
 //     }
-    
+
 //     return indices;
 // }
+#include "sort.h"
 #include <algorithm>
 #include <arpa/inet.h>
+#include <chrono>
 #include <cmath>
 #include <cstring>
 #include <iostream>
@@ -348,7 +350,6 @@
 #include <sys/types.h>
 #include <unistd.h>
 #include <vector>
-#include <chrono>
 using namespace std;
 using namespace std::chrono;
 
@@ -419,8 +420,7 @@ pair<bool, vector<float>> read_nums_from_socket(int socket)
             c = i == bytes_read ? ' ' : chars_arr[i];
             if (valid.find(c) != string::npos) {
                 current_num += c;
-            }
-            else if (!current_num.empty()) {
+            } else if (!current_num.empty()) {
                 try {
                     nums.push_back(stof(current_num));
                     cout << "Считано число " << current_num << endl;
@@ -457,12 +457,13 @@ bool send_floats_vector(int socket, vector<float> floats)
     ssize_t totalSent = 0;
     ssize_t dataLen = data.size();
     const char* buffer = data.c_str();
-    
+
     cout << "Отправляемые байты (" << dataLen << " байт): ";
     for (size_t i = 0; i < min((size_t)20, data.size()); i++) {
         cout << (int)(unsigned char)buffer[i] << " ";
     }
-    if (dataLen > 20) cout << "...";
+    if (dataLen > 20)
+        cout << "...";
     cout << endl;
 
     while (totalSent < dataLen) {
@@ -490,18 +491,18 @@ SearchResult sequentialSearch(const vector<int>& arr, int key)
     auto start = high_resolution_clock::now();
     vector<int> indices;
     int steps = 0;
-    
+
     for (int i = 0; i < arr.size(); i++) {
         steps++; // Считаем сравнение
         if (arr[i] == key) {
             indices.push_back(i);
         }
     }
-    
+
     auto end = high_resolution_clock::now();
     double duration = duration_cast<microseconds>(end - start).count() / 1000.0;
-    
-    return {indices, duration, steps};
+
+    return { indices, duration, steps };
 }
 
 // 2. Алгоритм быстрого последовательного поиска (с барьером)
@@ -510,7 +511,7 @@ SearchResult fastSequentialSearch(vector<int> arr, int key)
     auto start = high_resolution_clock::now();
     vector<int> indices;
     int steps = 0;
-    
+
     arr.push_back(key);
 
     int i = 0;
@@ -531,11 +532,11 @@ SearchResult fastSequentialSearch(vector<int> arr, int key)
             }
         }
     }
-    
+
     auto end = high_resolution_clock::now();
     double duration = duration_cast<microseconds>(end - start).count() / 1000.0;
-    
-    return {indices, duration, steps};
+
+    return { indices, duration, steps };
 }
 
 // 3. Алгоритм бинарного поиска всех вхождений
@@ -544,29 +545,27 @@ SearchResult binarySearchAll(const vector<int>& arr, int key)
     auto start = high_resolution_clock::now();
     vector<int> sortedArr = arr;
     sort(sortedArr.begin(), sortedArr.end());
-    
+
     vector<int> indices;
     int steps = 0;
     int first = -1;
-    
+
     int left = 0;
     int right = sortedArr.size() - 1;
-    
+
     // Бинарный поиск первого вхождения
     while (left <= right) {
         steps++; // Считаем сравнение в цикле
         int mid = left + (right - left) / 2;
-        
+
         steps++; // Сравнение arr[mid] == key
         if (sortedArr[mid] == key) {
             first = mid;
             right = mid - 1;
-        }
-        else if (sortedArr[mid] > key) {
+        } else if (sortedArr[mid] > key) {
             steps++; // Дополнительное сравнение
             right = mid - 1;
-        }
-        else {
+        } else {
             steps++; // Дополнительное сравнение
             left = mid + 1;
         }
@@ -575,7 +574,7 @@ SearchResult binarySearchAll(const vector<int>& arr, int key)
     if (first == -1) {
         auto end = high_resolution_clock::now();
         double duration = duration_cast<microseconds>(end - start).count() / 1000.0;
-        return {indices, duration, steps};
+        return { indices, duration, steps };
     }
 
     // Поиск всех вхождений влево
@@ -595,11 +594,11 @@ SearchResult binarySearchAll(const vector<int>& arr, int key)
     }
 
     sort(indices.begin(), indices.end());
-    
+
     auto end = high_resolution_clock::now();
     double duration = duration_cast<microseconds>(end - start).count() / 1000.0;
-    
-    return {indices, duration, steps};
+
+    return { indices, duration, steps };
 }
 
 // 4. Алгоритм последовательного поиска в упорядоченном массиве
@@ -608,10 +607,10 @@ SearchResult sequentialSearchSorted(vector<int>& arr, int key)
     auto start = high_resolution_clock::now();
     vector<int> sortedArr = arr;
     sort(sortedArr.begin(), sortedArr.end());
-    
+
     vector<int> indices;
     int steps = 0;
-    
+
     for (int i = 0; i < sortedArr.size(); i++) {
         steps++; // Сравнение
         if (sortedArr[i] == key) {
@@ -621,11 +620,11 @@ SearchResult sequentialSearchSorted(vector<int>& arr, int key)
             break;
         }
     }
-    
+
     auto end = high_resolution_clock::now();
     double duration = duration_cast<microseconds>(end - start).count() / 1000.0;
-    
-    return {indices, duration, steps};
+
+    return { indices, duration, steps };
 }
 
 int main()
@@ -635,7 +634,7 @@ int main()
         return 1;
     }
     cout << "<------------->" << endl;
-    
+
     while (1) {
         // Принимаем следующего пользователя
         int client_socket = accept_next_connection(listening_socket);
@@ -658,108 +657,108 @@ int main()
         // Разбиваем полученные числа на номер алгоритма и числа
         float algorithm = read_from_socket_res.second[0];
         vector<float> nums(read_from_socket_res.second.begin() + 1, read_from_socket_res.second.end());
-        
+
         // Преобразуем float в int для алгоритмов поиска
         vector<int> intArr;
         for (float num : nums) {
             intArr.push_back(static_cast<int>(num));
         }
-        
+
         // Инициализируем результат
         vector<float> result;
-        
+
         // Выбираем алгоритм
         if (algorithm == 1) {
             cout << "Выбран алгоритм поиска (1)" << endl;
-            
+
             if (nums.size() < 2) {
                 cerr << "Ошибка: для поиска нужно как минимум 2 числа (ключ и массив)" << endl;
-                vector<float> errorResult = {0.0f};
+                vector<float> errorResult = { 0.0f };
                 send_floats_vector(client_socket, errorResult);
                 close(client_socket);
                 continue;
             }
-            
+
             // Первое число после алгоритма - это ключ поиска
             int searchKey = static_cast<int>(nums[0]);
-            
+
             // Вектор для поиска (все числа после ключа)
             vector<int> searchArr(intArr.begin() + 1, intArr.end());
-            
+
             cout << "Ключ поиска: " << searchKey << endl;
             cout << "Размер массива для поиска: " << searchArr.size() << endl;
-            
+
             // Выполняем все 4 алгоритма поиска с измерением времени и подсчетом шагов
-            
+
             // 1. Последовательный поиск
             auto result1 = sequentialSearch(searchArr, searchKey);
-            cout << "1. Последовательный поиск: найдено " << result1.indices.size() 
+            cout << "1. Последовательный поиск: найдено " << result1.indices.size()
                  << " вхождений, время: " << result1.time_ms << " мс, шагов: " << result1.steps << endl;
-            
+
             // 2. Быстрый последовательный поиск (с барьером)
             auto result2 = fastSequentialSearch(searchArr, searchKey);
-            cout << "2. Быстрый последовательный поиск: найдено " << result2.indices.size() 
+            cout << "2. Быстрый последовательный поиск: найдено " << result2.indices.size()
                  << " вхождений, время: " << result2.time_ms << " мс, шагов: " << result2.steps << endl;
-            
+
             // 3. Бинарный поиск всех вхождений
             auto result3 = binarySearchAll(searchArr, searchKey);
-            cout << "3. Бинарный поиск: найдено " << result3.indices.size() 
+            cout << "3. Бинарный поиск: найдено " << result3.indices.size()
                  << " вхождений, время: " << result3.time_ms << " мс, шагов: " << result3.steps << endl;
-            
+
             // 4. Последовательный поиск в упорядоченном массиве
             auto result4 = sequentialSearchSorted(searchArr, searchKey);
-            cout << "4. Поиск в упорядоченном массиве: найдено " << result4.indices.size() 
+            cout << "4. Поиск в упорядоченном массиве: найдено " << result4.indices.size()
                  << " вхождений, время: " << result4.time_ms << " мс, шагов: " << result4.steps << endl;
-            
+
             // Формируем результат для отправки клиенту
             // Новый формат: [размер_результата1] [индексы1] [время1] [шаги1]
             //               [размер_результата2] [индексы2] [время2] [шаги2] ...
-            
+
             // Алгоритм 1
             result.push_back(static_cast<float>(result1.indices.size()));
             for (int idx : result1.indices) {
                 result.push_back(static_cast<float>(idx + 1)); // +1 для соответствия с примером клиента
             }
             result.push_back(static_cast<float>(result1.time_ms)); // Время выполнения
-            result.push_back(static_cast<float>(result1.steps));   // Количество шагов
-            
+            result.push_back(static_cast<float>(result1.steps)); // Количество шагов
+
             // Алгоритм 2
             result.push_back(static_cast<float>(result2.indices.size()));
             for (int idx : result2.indices) {
                 result.push_back(static_cast<float>(idx + 1));
             }
             result.push_back(static_cast<float>(result2.time_ms)); // Время выполнения
-            result.push_back(static_cast<float>(result2.steps));   // Количество шагов
-            
+            result.push_back(static_cast<float>(result2.steps)); // Количество шагов
+
             // Алгоритм 3
             result.push_back(static_cast<float>(result3.indices.size()));
             for (int idx : result3.indices) {
                 result.push_back(static_cast<float>(idx + 1));
             }
             result.push_back(static_cast<float>(result3.time_ms)); // Время выполнения
-            result.push_back(static_cast<float>(result3.steps));   // Количество шагов
-            
+            result.push_back(static_cast<float>(result3.steps)); // Количество шагов
+
             // Алгоритм 4
             result.push_back(static_cast<float>(result4.indices.size()));
             for (int idx : result4.indices) {
                 result.push_back(static_cast<float>(idx + 1));
             }
             result.push_back(static_cast<float>(result4.time_ms)); // Время выполнения
-            result.push_back(static_cast<float>(result4.steps));   // Количество шагов
-            
+            result.push_back(static_cast<float>(result4.steps)); // Количество шагов
+
         } else if (algorithm == 2) {
             // Вызываем функцию сортировки (1 вариант)
             cout << "Выбран алгоритм сортировки (2)" << endl;
-            // TODO: Реализовать сортировку
-            result.push_back(0.0f); // Заглушка
-        }
-        else if (algorithm == 3) {
+
+            vector<float> sorted = shell_fvec_sort(nums);
+            insertions_fvec_sort(nums);
+            result.insert(result.end(), sorted.begin(), sorted.end());
+        } else if (algorithm == 3) {
             // Вызываем функцию сортировки (6 вариант)
             cout << "Выбран алгоритм сортировки (6)" << endl;
             // TODO: Реализовать сортировку
             result.push_back(0.0f); // Заглушка
-        }
-        else {
+        } else {
             cout << "Неизвестный алгоритм: " << algorithm << endl;
             result.push_back(0.0f);
         }
@@ -772,6 +771,6 @@ int main()
         cout << "Сокет закрыт" << endl;
         cout << "<------------->" << endl;
     }
-    
+
     return 0;
 }

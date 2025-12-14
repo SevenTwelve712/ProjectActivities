@@ -122,18 +122,18 @@ vector<float> shell_fvec_sort(vector<float> arr)
     return arr;
 }
 
-int main()
-{
-    srand(time(0));
-    vector<float> arr = generateRandomVector(20000);
-    cout << "Ваш массив: ";
-    if (arr.size() <= 15) {
-        print_fvec(arr);
-    }
-    cout << '\n';
-    cout << "Сортировка шелла: " << endl;
-    vector<float> sorted = shell_fvec_sort(arr);
-    cout << "Сортировка вставками: " << endl;
-    sorted = insertions_fvec_sort(arr);
-    return 0;
-}
+// int main()
+// {
+//     srand(time(0));
+//     vector<float> arr = generateRandomVector(20000);
+//     cout << "Ваш массив: ";
+//     if (arr.size() <= 15) {
+//         print_fvec(arr);
+//     }
+//     cout << '\n';
+//     cout << "Сортировка шелла: " << endl;
+//     vector<float> sorted = shell_fvec_sort(arr);
+//     cout << "Сортировка вставками: " << endl;
+//     sorted = insertions_fvec_sort(arr);
+//     return 0;
+// }

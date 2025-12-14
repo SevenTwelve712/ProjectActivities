@@ -1,3 +1,0 @@
-/home/seventwelve712/Education/CProjectActivities/build/CMakeFiles/server.dir
-/home/seventwelve712/Education/CProjectActivities/build/CMakeFiles/edit_cache.dir
-/home/seventwelve712/Education/CProjectActivities/build/CMakeFiles/rebuild_cache.dir

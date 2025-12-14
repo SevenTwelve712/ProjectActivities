@@ -1,6 +1,6 @@
+#include "utils.h"
 #include <chrono>
 #include <iostream>
-#include <time.h>
 #include <vector>
 
 using namespace std;
@@ -10,27 +10,6 @@ using namespace std::chrono;
 #define GREEN "\033[32m"
 #define BLUE "\033[34m"
 #define RESET "\033[0m"
-
-vector<float> generateRandomVector(int n)
-{
-    vector<float> arr(n);
-    for (int i = 0; i < n; i++) {
-        arr[i] = (rand() % (2 * 10 * n) - 10 * n) / 10.0; // Числа от 0.0 до 99.9
-    }
-    return arr;
-}
-
-void print_fvec(const vector<float>& arr)
-{
-    cout << '{';
-    for (int i = 0; i < arr.size(); i++) {
-        cout << arr[i];
-        if (i != arr.size() - 1) {
-            cout << "; ";
-        }
-    }
-    cout << '}';
-}
 
 vector<float> insertions_fvec_sort(vector<float> arr)
 {
@@ -71,6 +50,10 @@ vector<float> insertions_fvec_sort(vector<float> arr)
     }
     cout << " Количество сравнений: " << comp_count << "; Количество вставок: " << insertions_count << "; Количество сдвигов: " << shift_count << endl;
     cout << "Время выполнения: " << duration_cast<microseconds>(end - start).count() << " микросекунд" << endl;
+    arr.insert(arr.begin(), duration_cast<microseconds>(end - start).count());
+    arr.insert(arr.begin(), insertions_count);
+    arr.insert(arr.begin(), comp_count);
+
     return arr;
 }
 
@@ -119,21 +102,8 @@ vector<float> shell_fvec_sort(vector<float> arr)
     }
     cout << " Количество сравнений: " << comp_count << "; Количество вставок: " << insertions_count << "; Количество сдвигов: " << shift_count << endl;
     cout << "Время выполнения: " << duration_cast<microseconds>(end - start).count() << " микросекунд" << endl;
+    arr.insert(arr.begin(), duration_cast<microseconds>(end - start).count());
+    arr.insert(arr.begin(), insertions_count);
+    arr.insert(arr.begin(), comp_count);
     return arr;
 }
-
-// int main()
-// {
-//     srand(time(0));
-//     vector<float> arr = generateRandomVector(20000);
-//     cout << "Ваш массив: ";
-//     if (arr.size() <= 15) {
-//         print_fvec(arr);
-//     }
-//     cout << '\n';
-//     cout << "Сортировка шелла: " << endl;
-//     vector<float> sorted = shell_fvec_sort(arr);
-//     cout << "Сортировка вставками: " << endl;
-//     sorted = insertions_fvec_sort(arr);
-//     return 0;
-// }

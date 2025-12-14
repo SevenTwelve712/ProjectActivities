@@ -5,6 +5,8 @@ project(MyProject LANGUAGES CXX)
 add_executable(server
     server.cpp
     sort6var.cpp
+    sort1var.cpp
+    utils.cpp
 )
 
 # стандарт C++
